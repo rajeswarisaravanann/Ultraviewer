@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UltraViewer - Host</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="host-container">
+    <h1>UltraViewer <span class="role">Host</span></h1>
+    <p class="subtitle">Share your screen with a viewer</p>
+
+    <div class="id-box">
+      <div class="id-label">YOUR ID</div>
+      <div class="id-value" id="my-id">000000000</div>
+    </div>
+
+    <div class="pass-box">
+      <div class="pass-label">PASSWORD</div>
+      <div class="pass-value" id="my-password">0000</div>
+    </div>
+
+    <div class="status-row">
+      <span id="live-dot" class="live-dot"></span>
+      <span id="status">Starting...</span>
+    </div>
+
+    <button class="stop-btn" id="stop-button">Stop</button>
+  </div>
+
+  <script src="../node_modules/socket.io-client/dist/socket.io.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

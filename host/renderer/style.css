@@ -1,0 +1,106 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0d1117;
+  color: #f0f6fc;
+}
+
+.host-container {
+  width: 100%;
+  max-width: 460px;
+  margin: 40px auto;
+  padding: 32px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+}
+
+.role {
+  color: #238636;
+}
+
+.subtitle {
+  margin: 0;
+  color: #8b949e;
+  line-height: 1.5;
+}
+
+.id-box,
+.pass-box {
+  padding: 18px;
+  background: #0f1720;
+  border: 1px solid #30363d;
+  border-radius: 14px;
+}
+
+.id-label,
+.pass-label {
+  font-size: 0.75rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
+}
+
+.id-value,
+.pass-value {
+  font-size: 1.8rem;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.15em;
+  margin-top: 8px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #adbac7;
+  font-size: 0.95rem;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2da44e;
+  display: none;
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.stop-btn {
+  width: 100%;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 14px;
+  background: #238636;
+  color: #f0f6fc;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.stop-btn:hover {
+  background: #2ea043;
+}

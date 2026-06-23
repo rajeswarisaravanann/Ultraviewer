@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UltraViewer - Viewer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="login-screen" class="login-container">
+    <h1>UltraViewer <span class="role">Viewer</span></h1>
+    <p class="subtitle">Enter the host details to connect</p>
+    <div class="form-card">
+      <input id="host-id" type="text" maxlength="9" placeholder="Host ID (9 digits)" autocomplete="off" />
+      <input id="host-password" type="password" maxlength="4" placeholder="Password (4 digits)" autocomplete="off" />
+      <button id="connect-button">Connect</button>
+      <div id="error-msg" class="error-msg"></div>
+    </div>
+  </div>
+
+  <div id="viewer-screen" class="viewer-container" style="display:none;">
+    <div class="topbar">
+      <span>Host: <strong id="remote-host-id">----</strong></span>
+      <span>Status: <strong id="conn-status">Connecting...</strong></span>
+      <span>Ping: <strong id="ping">--</strong></span>
+      <span>FPS: <strong id="fps">--</strong></span>
+      <button id="disconnect-button">Disconnect</button>
+    </div>
+    <div class="remote-area">
+      <img id="remote-img" 
+        tabindex="0"
+        alt="Remote screen"
+        draggable="false"
+        style="width:100%;height:100%;object-fit:contain;background:#000;display:block;outline:none;cursor:none"
+      />
+      <div id="loading-msg" class="loading-msg">Waiting for remote screen...</div>
+    </div>
+  </div>
+
+  <script src="../node_modules/socket.io-client/dist/socket.io.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

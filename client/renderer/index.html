@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UltraViewer Lite</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="home-screen" class="home-screen" style="display:flex;">
+    <div class="panel left-panel">
+      <h2>Share My Screen</h2>
+      <p>Let someone control your PC remotely.</p>
+      <div class="home-card">
+        <label>Your session ID</label>
+        <div id="home-id" class="value">000000000</div>
+      </div>
+      <div class="home-card">
+        <label>Your password</label>
+        <div id="home-password" class="value">0000</div>
+      </div>
+      <button id="start-share-button" class="button button-primary">Start Sharing</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="panel right-panel">
+      <h2>Control Remote PC</h2>
+      <p>Enter the ID and password of the remote PC.</p>
+      <input id="remote-id" type="text" maxlength="9" placeholder="Remote ID" autocomplete="off" />
+      <input id="remote-password" type="password" maxlength="4" placeholder="Password" autocomplete="off" />
+      <button id="connect-button" class="button button-primary">Connect</button>
+      <div id="connect-error" class="form-error" style="display:none;">Please enter valid credentials.</div>
+      <div class="status-text status-bar">Ready.</div>
+    </div>
+  </div>
+
+  <div id="controlled-screen" class="controlled-screen" style="display:none;">
+    <h1>Sharing your screen</h1>
+    <p>Give these details to the person who will connect:</p>
+    <div class="session-info">
+      <div>Session ID: <span id="display-id" class="big-id"></span></div>
+      <div>Password: <span id="display-password" class="big-password"></span></div>
+    </div>
+    <div id="controlled-status" class="controlled-status">Waiting for controller to connect...</div>
+    <button id="stop-share-button" class="button button-danger">Stop Sharing</button>
+  </div>
+
+  <div id="controller-screen" class="controller-screen" style="display:none;">
+    <div id="controller-topbar" class="controller-topbar">
+      <span>Remote: <span id="remote-display-id"></span></span>
+      <span id="ping-display">Ping: -- ms</span>
+      <button id="disconnect-button" class="button button-danger">Disconnect</button>
+    </div>
+    <div id="video-container" class="video-container">
+      <img id="remote-video-img" src="" alt="Remote screen" />
+      <div id="remote-overlay" class="video-overlay">Waiting for remote stream...</div>
+      <div id="stream-loading" class="stream-loading">Waiting for remote screen...</div>
+    </div>
+  </div>
+
+  <script src="../node_modules/socket.io-client/dist/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "ultraviewer-host",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "npx @electron/rebuild -f -w robotjs -w @jitsi/robotjs || true"
+  },
+  "dependencies": {
+    "electron": "^28.1.0",
+    "robotjs": "0.6.0",
+    "socket.io-client": "4.6.1"
+  },
+  "optionalDependencies": {
+    "@jitsi/robotjs": "0.6.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "3.3.0"
+  }
+}

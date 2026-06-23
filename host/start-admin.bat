@@ -1,0 +1,3 @@
+@echo off
+echo Starting UltraViewer Host as Administrator...
+powershell -Command "Start-Process cmd -ArgumentList '/c cd /d %~dp0 && npm start' -Verb RunAs"

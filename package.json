@@ -1,0 +1,14 @@
+{
+  "name": "ultraviewer-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start:server": "cd server && npm start",
+    "start:host": "cd host && npm start",
+    "start:viewer": "cd viewer && npm start",
+    "start:all": "powershell -ExecutionPolicy Bypass -NoProfile -File scripts\\start-all.ps1"
+  },
+  "dependencies": {
+    "@jitsi/robotjs": "^0.6.22"
+  }
+}
