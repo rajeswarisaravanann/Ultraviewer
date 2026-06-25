@@ -99,4 +99,17 @@ process.on('unhandledRejection', (reason) => {
 })
 
 const port = process.env.PORT || 3000
-httpServer.listen(port, () => console.log(`[Server] running on :${port}`))
+
+console.log('[Server] NODE_ENV=', process.env.NODE_ENV || 'development')
+console.log('[Server] process.versions=', process.versions)
+
+try {
+  httpServer.listen(port, '0.0.0.0', () => console.log(`[Server] running on :${port} (bound 0.0.0.0)`))
+} catch (err) {
+  console.error('[Server] failed to start:', err)
+  process.exit(1)
+}
+
+process.on('exit', (code) => {
+  console.log('[Server] exiting with code', code)
+})
