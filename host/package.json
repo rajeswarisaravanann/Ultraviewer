@@ -1,20 +1,45 @@
 {
   "name": "ultraviewer-host",
   "version": "1.0.0",
+  "description": "RemoteLink Host",
+  "author": "Rajeswari",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "postinstall": "npx @electron/rebuild -f -w robotjs -w @jitsi/robotjs || true"
+    "postinstall": "node ./scripts/rebuild-native.js",
+    "rebuild": "node ./scripts/rebuild-native.js",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win --x64"
   },
   "dependencies": {
-    "electron": "^28.1.0",
-    "robotjs": "0.6.0",
+    "@jitsi/robotjs": "^0.6.22",
     "socket.io-client": "4.6.1"
   },
-  "optionalDependencies": {
-    "@jitsi/robotjs": "0.6.0"
-  },
   "devDependencies": {
-    "@electron/rebuild": "3.3.0"
+    "electron": "^28.1.0",
+    "@electron/rebuild": "3.3.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.remotelink.host",
+    "productName": "RemoteLink Host",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!node_modules/.cache/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

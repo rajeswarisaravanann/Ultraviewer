@@ -20,6 +20,8 @@ let remoteH = 1080
 let frameCount = 0
 let lastFpsTime = Date.now()
 let pingInterval = null
+let _lastTargetId = null
+let _lastPassword = null
 
 const loginScreen = document.getElementById('login-screen')
 const viewerScreen = document.getElementById('viewer-screen')
@@ -44,6 +46,13 @@ hostPasswordInput.addEventListener('keypress', (e) => {
 socket.on('connect', () => {
   console.log('[Viewer] socket connected:', socket.id)
   connStatus.textContent = 'Connected'
+  // If we attempted a connection before and lost it, retry automatically
+  if (_lastTargetId && _lastPassword) {
+    console.log('[Viewer] re-attempting viewer-connect for', _lastTargetId)
+    socket.emit('viewer-connect', { targetId: _lastTargetId, password: _lastPassword })
+    connStatus.textContent = 'Reconnecting to host...'
+    loadingMsg.style.display = 'block'
+  }
 })
 
 socket.on('reconnect_attempt', (attempt) => {
@@ -156,6 +165,10 @@ function connect() {
   showScreen('viewer-screen')
   connStatus.textContent = 'Connecting...'
   loadingMsg.style.display = 'block'
+
+  // Save last attempted connection for auto-reconnect
+  _lastTargetId = hostId
+  _lastPassword = password
 
   socket.emit('viewer-connect', { targetId: hostId, password })
 }

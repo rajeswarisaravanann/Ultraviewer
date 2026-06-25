@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: ultraviewer-server
+    env: node
+    plan: free
+    branch: main
+    # Working directory for the service. Render will run build/start commands from here.
+    root: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: TURN_URL
+        value: ""
+        secure: true
+      - key: TURN_USERNAME
+        value: ""
+        secure: true
+      - key: TURN_CREDENTIAL
+        value: ""
+        secure: true

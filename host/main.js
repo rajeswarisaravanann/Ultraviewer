@@ -28,6 +28,11 @@ let robotLoadAttempted = false
 let robotLoadError = null
 let robotMissingLogged = false
 
+// Startup logging
+console.log('[Host Main] Platform:', process.platform)
+console.log('[Host Main] Node:', process.version)
+console.log('[Host Main] Electron:', process.versions && process.versions.electron)
+
 function tryLoadRobotJS() {
   if (robotLoadAttempted) return
   robotLoadAttempted = true
@@ -47,6 +52,9 @@ function tryLoadRobotJS() {
 }
 
 tryLoadRobotJS()
+
+ipcMain.handle('is-robot-available', () => !!robot)
+
 
 function reportRobotMissingOnce() {
   if (robotMissingLogged) return
@@ -81,7 +89,14 @@ function createWindow() {
     console.error('[Host Main] did-fail-load', errorCode, errorDescription, validatedURL)
   })
 
-  win.once('ready-to-show', () => win.show())
+  win.once('ready-to-show', () => {
+    try {
+      win.webContents.send('robot-status', { available: !!robot, error: robotLoadError ? robotLoadError.message : null })
+    } catch (e) {
+      console.warn('[Host Main] failed to send robot-status to renderer:', e && e.message)
+    }
+    win.show()
+  })
   win.setMenu(null)
 }
 

@@ -18,6 +18,7 @@ let viewerSocketId = null
 let streamInterval = null
 let myId = generateId()
 let myPassword = generatePassword()
+let _registered = false
 
 const statusEl = document.getElementById('status')
 const liveDot = document.getElementById('live-dot')
@@ -29,14 +30,39 @@ myIdEl.textContent = myId
 myPasswordEl.textContent = myPassword
 setStatus('Initializing...')
 
+// Check robot availability from main process and show warning if unavailable
+if (window.hostStatus && window.hostStatus.onRobotStatus) {
+  window.hostStatus.onRobotStatus((status) => {
+    if (!status || !status.available) {
+      console.warn('[Host UI] RobotJS unavailable:', status && status.error)
+      setStatus('Remote mouse and keyboard control unavailable. Native input module failed to load.')
+    }
+  })
+
+  // Also query current status
+  if (window.hostStatus.isRobotAvailable) {
+    window.hostStatus.isRobotAvailable().then((available) => {
+      if (!available) setStatus('Remote mouse and keyboard control unavailable. Native input module failed to load.')
+    }).catch(() => {})
+  }
+}
+
 stopButton.addEventListener('click', () => {
   window.close()
 })
 
 socket.on('connect', () => {
   console.log('[Host] socket connected:', socket.id)
-  setStatus('Connected to signaling server — Starting screen capture...')
-  init()
+  setStatus('Connected to signaling server')
+  // If we already registered before, re-register so server restores session
+  if (_registered && myId && myPassword) {
+    console.log('[Host] re-registering after reconnect:', myId)
+    socket.emit('host-register', { id: myId, password: myPassword })
+    setStatus('Re-registering session...')
+  } else {
+    setStatus('Connected to signaling server — Starting screen capture...')
+    init()
+  }
 })
 
 socket.on('reconnect_attempt', (attempt) => {
@@ -56,6 +82,7 @@ socket.on('connect_error', (err) => {
 
 socket.on('host-registered', ({ id }) => {
   console.log('[Host] registered:', id)
+  _registered = true
   setStatus('Waiting for viewer to connect...')
 })
 

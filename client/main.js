@@ -2,13 +2,24 @@ const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
 const path = require('path');
 
 let robot = null;
-try {
-  robot = require('robotjs');
-  console.log('[Main] robotjs loaded OK');
-} catch (e) {
-  robot = null;
-  console.error('[Main] robotjs failed:', e.message);
+let robotLoadError = null;
+const robotCandidates = ['robotjs', '@jitsi/robotjs']
+for (const name of robotCandidates) {
+  try {
+    robot = require(name)
+    console.log('[Main] RobotJS loaded from', name)
+    break
+  } catch (e) {
+    robotLoadError = e
+    console.warn('[Main] failed to load', name, e && e.message)
+  }
 }
+if (!robot) console.error('[Main] RobotJS not available. Remote input disabled.')
+
+console.log('[Client Main] Platform:', process.platform)
+console.log('[Client Main] Node:', process.version)
+console.log('[Client Main] Electron:', process.versions && process.versions.electron)
+console.log('[Client Main] RobotJS available:', !!robot)
 
 let mainWindow;
 

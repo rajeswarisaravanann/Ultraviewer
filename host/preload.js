@@ -9,3 +9,8 @@ contextBridge.exposeInMainWorld('hostAPI', {
   mouseScroll: (dx, dy) => ipcRenderer.send('mouse-scroll', { dx, dy }),
   keyPress: (key, action) => ipcRenderer.send('key-press', { key, action })
 })
+
+contextBridge.exposeInMainWorld('hostStatus', {
+  isRobotAvailable: () => ipcRenderer.invoke('is-robot-available'),
+  onRobotStatus: (cb) => ipcRenderer.on('robot-status', (_, status) => cb(status))
+})
