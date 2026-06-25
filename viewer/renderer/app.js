@@ -1,13 +1,30 @@
-const socket = io(window.SIGNALING_SERVER, {
+const SIGNALING_SERVER = window.SIGNALING_SERVER || 'https://ultraviewer-server.onrender.com'
+if (!window.SIGNALING_SERVER) {
+  console.warn('[Viewer] config.js not loaded or SIGNALING_SERVER missing. Using fallback:', SIGNALING_SERVER)
+}
+const socket = io(SIGNALING_SERVER, {
+  path: '/socket.io',
   transports: ["websocket", "polling"],
+  secure: true,
   reconnection: true,
   reconnectionAttempts: Infinity,
-  timeout: 20000,
+  timeout: 30000,
 })
+let viewerConnectPending = null
 const rtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    {
+      urls: [
+        'turn:openrelay.metered.ca:443?transport=tcp',
+        'turn:openrelay.metered.ca:3478?transport=udp'
+      ],
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
   ]
 }
 
@@ -43,16 +60,42 @@ hostPasswordInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') connect()
 })
 
+socket.onAny((event, ...args) => {
+  console.log('[Viewer] socket event:', event, args)
+})
+
 socket.on('connect', () => {
-  console.log('[Viewer] socket connected:', socket.id)
-  connStatus.textContent = 'Connected'
-  // If we attempted a connection before and lost it, retry automatically
-  if (_lastTargetId && _lastPassword) {
+  console.log('[Viewer] socket connected:', socket.id, 'SIGNALING_SERVER=', SIGNALING_SERVER)
+  connStatus.textContent = 'Connected to signaling server'
+  if (viewerConnectPending) {
+    console.log('[Viewer] retrying pending viewer-connect', viewerConnectPending)
+    socket.emit('viewer-connect', viewerConnectPending)
+    viewerConnectPending = null
+    connStatus.textContent = 'Reconnecting to host...'
+    loadingMsg.style.display = 'block'
+  } else if (_lastTargetId && _lastPassword) {
     console.log('[Viewer] re-attempting viewer-connect for', _lastTargetId)
     socket.emit('viewer-connect', { targetId: _lastTargetId, password: _lastPassword })
     connStatus.textContent = 'Reconnecting to host...'
     loadingMsg.style.display = 'block'
   }
+})
+
+socket.on('disconnect', (reason) => {
+  console.warn('[Viewer] socket disconnected:', reason)
+  connStatus.textContent = 'Disconnected from signaling server'
+})
+
+socket.on('connect_timeout', () => {
+  console.error('[Viewer] connect timeout')
+  connStatus.textContent = 'Connection timeout'
+  showError('Signaling server timeout')
+})
+
+socket.on('reconnect_error', (err) => {
+  console.error('[Viewer] reconnect error', err)
+  connStatus.textContent = 'Reconnect error'
+  showError('Reconnect error: ' + (err.message || err))
 })
 
 socket.on('reconnect_attempt', (attempt) => {
@@ -68,24 +111,145 @@ socket.on('reconnect', () => {
 socket.on('connect_error', (err) => {
   console.error('[Viewer] connect error', err)
   connStatus.textContent = 'Connection Error'
+  showError('Unable to connect to signaling server: ' + (err.message || err))
+})
+
+socket.on('connect_failed', (err) => {
+  console.error('[Viewer] connect failed', err)
+  connStatus.textContent = 'Connect failed'
+  showError('Failed to connect to signaling server')
+})
+
+socket.on('connect_timeout', () => {
+  console.error('[Viewer] connect timeout')
+  connStatus.textContent = 'Connection timeout'
+  showError('Signaling server connect timeout')
+})
+
+socket.on('reconnect_failed', () => {
+  console.error('[Viewer] reconnect failed')
+  connStatus.textContent = 'Reconnect failed'
+  showError('Could not reconnect to signaling server')
+})
+
+socket.on('error', (err) => {
+  console.error('[Viewer] socket error', err)
+  showError('Socket error: ' + (err.message || err))
 })
 
 socket.on('error-msg', (msg) => {
+  console.warn('[Viewer] error-msg:', msg)
   showError(msg)
   showScreen('login-screen')
 })
 
 socket.on('offer', async ({ sdp, from }) => {
-  console.log('[Viewer] offer from:', from)
+  console.log('[Viewer] offer received from host:', from)
   hostSocketId = from
+  createPeerConnection(from)
 
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription(sdp))
+    const answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+    socket.emit('answer', { to: from, sdp: pc.localDescription })
+    console.log('[Viewer] answer sent')
+  } catch (err) {
+    console.error('[Viewer] offer handling failed:', err)
+    showError('Failed to process host offer')
+    cleanupPeerConnection()
+  }
+})
+
+socket.on('ice', async ({ candidate, from }) => {
+  if (!pc) {
+    console.warn('[Viewer] ICE received before peer created')
+    return
+  }
+  if (candidate) {
+    try {
+      console.log('[Viewer] adding ICE candidate from host')
+      await pc.addIceCandidate(new RTCIceCandidate(candidate))
+    } catch (e) {
+      console.error('[Viewer] ICE error:', e)
+    }
+  }
+})
+
+function connect() {
+  const hostId = hostIdInput.value.trim()
+  const password = hostPasswordInput.value.trim()
+
+  if (!hostId || hostId.length !== 9) {
+    showError('Enter a valid Host ID')
+    return
+  }
+  if (!password || password.length !== 4) {
+    showError('Enter the 4-digit password')
+    return
+  }
+
+  cleanupPeerConnection()
+  errorMsg.textContent = ''
+  remoteHostId.textContent = hostId
+  showScreen('viewer-screen')
+  connStatus.textContent = 'Connecting...'
+  loadingMsg.style.display = 'block'
+
+  _lastTargetId = hostId
+  _lastPassword = password
+
+  console.log('[Viewer] emitting viewer-connect', { targetId: hostId, password })
+  if (!socket.connected) {
+    connStatus.textContent = 'Connecting to signaling server...'
+  }
+
+  viewerConnectPending = { targetId: hostId, password }
+  socket.emit('viewer-connect', viewerConnectPending)
+}
+
+function createPeerConnection(remoteId) {
+  cleanupPeerConnection()
   pc = new RTCPeerConnection(rtcConfig)
+
+  pc.onicecandidate = ({ candidate }) => {
+    if (candidate && remoteId) {
+      console.log('[Viewer] sending ICE candidate to host')
+      socket.emit('ice', { to: remoteId, candidate })
+    }
+  }
+
+  pc.oniceconnectionstatechange = () => {
+    console.log('[Viewer] ICE state:', pc.iceConnectionState)
+    if (pc.iceConnectionState === 'connected') {
+      connStatus.textContent = 'Connected'
+      loadingMsg.style.display = 'none'
+    }
+    if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+      showError('Connection lost')
+      cleanupPeerConnection()
+      showScreen('login-screen')
+    }
+  }
+
+  pc.onconnectionstatechange = () => {
+    console.log('[Viewer] peer connection state:', pc.connectionState)
+    if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
+      connStatus.textContent = 'Connection lost'
+    }
+  }
+
+  pc.onicegatheringstatechange = () => {
+    console.log('[Viewer] ICE gathering state:', pc.iceGatheringState)
+  }
 
   pc.ondatachannel = ({ channel }) => {
     if (channel.label === 'video') {
       videoChannel = channel
       videoChannel.binaryType = 'arraybuffer'
       videoChannel.onmessage = (e) => renderFrame(e.data)
+      videoChannel.onopen = () => console.log('[Viewer] video channel open')
+      videoChannel.onclose = () => console.log('[Viewer] video channel closed')
     }
 
     if (channel.label === 'control') {
@@ -112,68 +276,61 @@ socket.on('offer', async ({ sdp, from }) => {
       }
       controlChannel.onclose = () => {
         console.log('[Viewer] control closed')
-        showError('Connection closed')
+        showError('Control channel closed')
+        cleanupPeerConnection()
         showScreen('login-screen')
       }
     }
   }
 
   pc.onicecandidate = ({ candidate }) => {
-    if (candidate) socket.emit('ice', { to: from, candidate })
+    if (candidate && remoteId) {
+      console.log('[Viewer] sending ICE candidate to host')
+      socket.emit('ice', { to: remoteId, candidate })
+    }
   }
 
   pc.oniceconnectionstatechange = () => {
     console.log('[Viewer] ICE state:', pc.iceConnectionState)
     if (pc.iceConnectionState === 'connected') {
       connStatus.textContent = 'Connected'
+      loadingMsg.style.display = 'none'
     }
     if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
       showError('Connection lost')
+      cleanupPeerConnection()
       showScreen('login-screen')
     }
   }
 
-  await pc.setRemoteDescription(new RTCSessionDescription(sdp))
-  const answer = await pc.createAnswer()
-  await pc.setLocalDescription(answer)
-  socket.emit('answer', { to: from, sdp: pc.localDescription })
-  console.log('[Viewer] answer sent')
-})
-
-socket.on('ice', async ({ candidate }) => {
-  if (pc && candidate) {
-    try { await pc.addIceCandidate(new RTCIceCandidate(candidate)) }
-    catch (e) { console.error('[Viewer] ICE error:', e) }
-  }
-})
-
-function connect() {
-  const hostId = hostIdInput.value.trim()
-  const password = hostPasswordInput.value.trim()
-
-  if (!hostId || hostId.length !== 9) {
-    showError('Enter a valid Host ID')
-    return
-  }
-  if (!password || password.length !== 4) {
-    showError('Enter the 4-digit password')
-    return
+  pc.onconnectionstatechange = () => {
+    console.log('[Viewer] connection state:', pc.connectionState)
+    if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
+      connStatus.textContent = 'Connection lost'
+    }
   }
 
-  errorMsg.textContent = ''
-  remoteHostId.textContent = hostId
-  showScreen('viewer-screen')
-  connStatus.textContent = 'Connecting...'
-  loadingMsg.style.display = 'block'
+  pc.onicegatheringstatechange = () => {
+    console.log('[Viewer] ICE gathering state:', pc.iceGatheringState)
+  }
+}
 
-  // Save last attempted connection for auto-reconnect
-  _lastTargetId = hostId
-  _lastPassword = password
-
-  socket.emit('viewer-connect', { targetId: hostId, password })
+function cleanupPeerConnection() {
+  if (pingInterval) {
+    clearInterval(pingInterval)
+    pingInterval = null
+  }
+  if (pc) {
+    try { pc.close() } catch (e) { console.warn('[Viewer] close peer error', e) }
+    pc = null
+  }
+  videoChannel = null
+  controlChannel = null
+  hostSocketId = null
 }
 
 function renderFrame(buf) {
+  if (!buf) return
   const blob = new Blob([buf], { type: 'image/jpeg' })
   const url = URL.createObjectURL(blob)
   const oldUrl = remoteImg.src
@@ -301,8 +458,7 @@ function startPing() {
 }
 
 function disconnect() {
-  if (pc) pc.close()
-  if (pingInterval) clearInterval(pingInterval)
+  cleanupPeerConnection()
   showScreen('login-screen')
 }
 

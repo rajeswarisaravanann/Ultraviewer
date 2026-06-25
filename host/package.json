@@ -6,8 +6,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "postinstall": "node ./scripts/rebuild-native.js",
-    "rebuild": "node ./scripts/rebuild-native.js",
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild": "electron-builder install-app-deps",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win --x64"
   },
@@ -16,8 +16,8 @@
     "socket.io-client": "4.6.1"
   },
   "devDependencies": {
-    "electron": "^28.1.0",
     "@electron/rebuild": "3.3.0",
+    "electron": "^28.1.0",
     "electron-builder": "^26.15.3"
   },
   "build": {
@@ -32,8 +32,7 @@
       "!node_modules/.cache/**"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "build/icon.ico"
+      "target": "nsis"
     },
     "nsis": {
       "oneClick": false,
