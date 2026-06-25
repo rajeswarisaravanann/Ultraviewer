@@ -1,29 +1,23 @@
-# UltraViewer Lite
+# Render CLI
 
-## Setup
+## Installation
 
-1. cd server && npm install
-2. cd ..
-3. cd client && npm install
-   (postinstall auto-runs: npx @electron/rebuild -f -w robotjs)
-4. If robotjs rebuild fails on Windows, run as Administrator:
-   npx @electron/rebuild -f -w robotjs
+- [Homebrew](https://render.com/docs/cli#homebrew-macos-linux)
+- [Direct Download](https://render.com/docs/cli#direct-download)
 
-## Run
+## Documentation
 
-Terminal 1:
-```
-cd server
-npm start
-```
+Documentation is hosted at https://render.com/docs/cli.
 
-Terminal 2:
-```
-cd client
-npm start
-```
+## Contributing
 
-## If you get ETARGET or version errors
-- Delete `node_modules` and `package-lock.json` in `client/`
-- Run: `npm cache clean --force`
-- Run: `npm install` again
+To create a new command, use the `cmd/template.go` template file as a starting point. Reference the [CLI Style Guide](docs/STYLE.md) to learn more about command naming, flags, arguments, and help text conventions.
+
+### Dev setup
+
+We use [prek](https://prek.j178.dev/) to run precommit-compatible checks locally and in CI.
+
+- If you didn't install `prek` following the [dev setup guide](https://slab.render.com/posts/dev-setup-guide-ect5drdb), do so now (e.g., `brew install prek`)
+- Set up prek git hooks with `prek install`.
+
+Read [AGENTS.md](AGENTS.md) for common dev commands. It's written for humans too!
