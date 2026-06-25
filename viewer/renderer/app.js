@@ -1,4 +1,9 @@
-const socket = io('http://localhost:3000')
+const socket = io(window.SIGNALING_SERVER, {
+  transports: ["websocket", "polling"],
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  timeout: 20000,
+})
 const rtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -38,6 +43,22 @@ hostPasswordInput.addEventListener('keypress', (e) => {
 
 socket.on('connect', () => {
   console.log('[Viewer] socket connected:', socket.id)
+  connStatus.textContent = 'Connected'
+})
+
+socket.on('reconnect_attempt', (attempt) => {
+  console.log('[Viewer] reconnect attempt', attempt)
+  connStatus.textContent = 'Reconnecting...'
+})
+
+socket.on('reconnect', () => {
+  console.log('[Viewer] reconnected')
+  connStatus.textContent = 'Reconnected'
+})
+
+socket.on('connect_error', (err) => {
+  console.error('[Viewer] connect error', err)
+  connStatus.textContent = 'Connection Error'
 })
 
 socket.on('error-msg', (msg) => {

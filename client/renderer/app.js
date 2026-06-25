@@ -1,5 +1,10 @@
 // -- Socket ----------------------------------------------
-const socket = io('http://localhost:3000');
+const socket = io(window.SIGNALING_SERVER, {
+  transports: ["websocket", "polling"],
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  timeout: 20000,
+});
 let peerConnection = null;
 let videoChannel = null;
 let controlChannel = null;
@@ -86,8 +91,23 @@ socket.on('connect', () => {
   }
 });
 
-socket.on('disconnect', () => {
-  log('Socket disconnected');
+socket.on('reconnect_attempt', (attempt) => {
+  log('Socket reconnect attempt:', attempt);
+  updateStatus('Reconnecting...');
+});
+
+socket.on('reconnect', (attempt) => {
+  log('Socket reconnected after attempt:', attempt);
+  updateStatus('Reconnected to signaling server.');
+});
+
+socket.on('connect_error', (err) => {
+  log('Socket connection error:', err);
+  updateStatus('Connection error');
+});
+
+socket.on('disconnect', (reason) => {
+  log('Socket disconnected:', reason);
   updateStatus('Disconnected. Trying to reconnect...');
 });
 
@@ -297,7 +317,7 @@ function setupControlledPeerHandlers() {
 }
 
 async function startWebRTCAsControlled() {
-  updateStatus('Controller connecting — creating offer...');
+  updateStatus('Controller connecting ï¿½ creating offer...');
   if (!peerConnection) {
     showError('Peer connection missing');
     return;

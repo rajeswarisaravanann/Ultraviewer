@@ -1,4 +1,9 @@
-const socket = io('http://localhost:3000')
+const socket = io(window.SIGNALING_SERVER, {
+  transports: ["websocket", "polling"],
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  timeout: 20000,
+})
 const rtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -30,8 +35,23 @@ stopButton.addEventListener('click', () => {
 
 socket.on('connect', () => {
   console.log('[Host] socket connected:', socket.id)
-  setStatus('Starting screen capture...')
+  setStatus('Connected to signaling server — Starting screen capture...')
   init()
+})
+
+socket.on('reconnect_attempt', (attempt) => {
+  console.log('[Host] reconnect attempt', attempt)
+  setStatus('Reconnecting...')
+})
+
+socket.on('reconnect', () => {
+  console.log('[Host] reconnected')
+  setStatus('Reconnected to signaling server')
+})
+
+socket.on('connect_error', (err) => {
+  console.error('[Host] connect error', err)
+  setStatus('Connection Error')
 })
 
 socket.on('host-registered', ({ id }) => {
